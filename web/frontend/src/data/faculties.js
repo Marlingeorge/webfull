@@ -1,0 +1,15 @@
+export const FACULTIES = [
+  "Faculté de Droit",
+  "Faculté des Lettres et Sciences Humaines",
+  "Faculté de Médecine",
+  "Faculté de Médecine Dentaire (Bucco-dentaire)",
+  "Faculté de Médecine Vétérinaire",
+  "Faculté de Pétrole, Gaz et Énergies Nouvelles",
+  "Faculté Polytechnique",
+  "Faculté de Psychologie et des Sciences de l'Éducation",
+  "Faculté des Sciences et Technologies",
+  "Faculté des Sciences Agronomiques",
+  "Faculté des Sciences Économiques et de Gestion",
+  "Faculté des Sciences Pharmaceutiques",
+  "Faculté des Sciences Sociales, Administratives et Politiques (SSAP)",
+];
