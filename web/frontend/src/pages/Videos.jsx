@@ -1,25 +1,11 @@
 import Navbar from "../components/Navbar";
 import { useNavigate } from "react-router-dom";
-import vid1 from "../forms/videos/vid1.mp4";
-import vid2 from "../forms/videos/vid2.mp4";
 import vid3 from "../forms/videos/vid3.mp4";
 
 const VIDEOS = [
   {
-    src: vid1,
-    title: "Vidéo 1 : Présentation des tâches",
-    description: "Découvre comment les tâches sont réparties pour chaque résident et les étapes à suivre pour bien commencer.",
-    videoClass: "video-top",
-  },
-  {
-    src: vid2,
-    title: "Vidéo 2 : Suivi des répartitions",
-    description: "Regarde l’explication du système de suivi des présences et de la gestion des changements de planning.",
-    videoClass: "video-bottom",
-  },
-  {
     src: vid3,
-    title: "Vidéo 3 : Bonnes pratiques",
+    title: "Vidéo : Bonnes pratiques",
     description: "Apprends les bonnes pratiques pour respecter la répartition et rendre la vie en communauté plus fluide.",
   },
 ];
