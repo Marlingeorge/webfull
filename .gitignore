@@ -20,6 +20,7 @@ build/
 
 *.log
 *.mp4
+!web/frontend/src/forms/videos/*.mp4
 *.avi
 *.mov
 .venv/
