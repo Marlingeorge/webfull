@@ -35,6 +35,11 @@ def create_person_endpoint(
     person_in = schemas.PersonCreate(full_name=full_name, assign_number=assign_number, faculty_name=faculty_name)
     try:
         return services.create_person(db, person_in, photo_path=photo_path)
+    except ValueError as exc:
+        db.rollback()
+        if str(exc).startswith("assign_number already exists"):
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="assign_number already exists")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     except IntegrityError as exc:
         db.rollback()
         if "Duplicate entry" in str(exc.orig):
@@ -135,7 +140,13 @@ async def update_person(person_id: int, request: Request, db: Session = Depends(
         if body.get("active") is not None:
             data["active"] = body.get("active")
 
-    p = services.update_person(db, person_id, data)
+    try:
+        p = services.update_person(db, person_id, data)
+    except ValueError as exc:
+        if str(exc).startswith("assign_number already exists"):
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="assign_number already exists")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
     if not p:
         raise HTTPException(status_code=404, detail="Not found")
     return p

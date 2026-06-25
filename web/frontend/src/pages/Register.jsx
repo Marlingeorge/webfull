@@ -42,7 +42,11 @@ export default function Register() {
       navigate("/");
     } catch (err) {
       console.error(err);
-      alert("Erreur lors de l'enregistrement");
+      if (err?.response?.status === 409) {
+        alert("Ce numéro d'affectation existe déjà. Utilisez un numéro unique.");
+      } else {
+        alert("Erreur lors de l'enregistrement");
+      }
     } finally {
       setSubmitting(false);
     }

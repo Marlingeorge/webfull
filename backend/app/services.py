@@ -44,6 +44,14 @@ def format_distribution_summary(assignments: dict, persons: list[models.Person],
 
 
 def create_person(db: Session, person_in: schemas.PersonCreate, photo_path: str = None):
+    existing = (
+        db.query(models.Person)
+        .filter(models.Person.assign_number == person_in.assign_number)
+        .first()
+    )
+    if existing:
+        raise ValueError("assign_number already exists")
+
     person = models.Person(
         full_name=person_in.full_name,
         assign_number=person_in.assign_number,
@@ -255,6 +263,19 @@ def update_person(db: Session, person_id: int, data: dict):
     person = get_person(db, person_id)
     if not person:
         return None
+
+    if (
+        data.get("assign_number") is not None
+        and data.get("assign_number") != person.assign_number
+    ):
+        existing = (
+            db.query(models.Person)
+            .filter(models.Person.assign_number == data["assign_number"])
+            .first()
+        )
+        if existing:
+            raise ValueError("assign_number already exists")
+
     for k, v in data.items():
         if hasattr(person, k):
             setattr(person, k, v)
