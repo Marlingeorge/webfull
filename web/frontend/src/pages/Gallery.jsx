@@ -1,9 +1,7 @@
 import Navbar from "../components/Navbar";
 import AdminNav from "../components/AdminNav";
 import { useEffect, useState } from "react";
-import axios from "../services/api";
-
-const API_BASE_HOST = (import.meta.env.VITE_API_URL || 'http://localhost:8000').replace(/\/api\/?$/, '');
+import axios, { API_BASE_HOST } from "../services/api";
 
 function getPhotoUrl(photoPath) {
   if (!photoPath) return null;

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form, Request, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing import Optional
 from . import services, schemas
@@ -32,7 +33,13 @@ def create_person_endpoint(
             shutil.copyfileobj(photo.file, f)
         photo_path = f"/uploads/{safe_name}"
     person_in = schemas.PersonCreate(full_name=full_name, assign_number=assign_number, faculty_name=faculty_name)
-    return services.create_person(db, person_in, photo_path=photo_path)
+    try:
+        return services.create_person(db, person_in, photo_path=photo_path)
+    except IntegrityError as exc:
+        db.rollback()
+        if "Duplicate entry" in str(exc.orig):
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="assign_number already exists")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database error")
 
 @router.get("/persons")
 def list_persons_endpoint(active: Optional[bool] = None, db: Session = Depends(get_db)):
