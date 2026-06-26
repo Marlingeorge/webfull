@@ -7,8 +7,18 @@ from .config import DATABASE_URL
 engine = None
 try:
     if DATABASE_URL:
-        engine = create_engine(DATABASE_URL, pool_pre_ping=True)
-except Exception:
+        engine = create_engine(
+            DATABASE_URL,
+            pool_pre_ping=True,
+            pool_recycle=1800,
+            pool_size=5,
+            max_overflow=10,
+            pool_timeout=10,
+            connect_args={"connect_timeout": 10},
+            future=True,
+        )
+except Exception as exc:
+    print("Warning: database engine creation failed:", exc)
     engine = None
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
