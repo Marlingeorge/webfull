@@ -23,7 +23,7 @@ JWT_ALGORITHM = "HS256"
 
 ALLOWED_ORIGINS = [
     origin.strip()
-    for origin in getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",")
+    for origin in getenv("ALLOWED_ORIGINS", "*").split(",")
     if origin.strip()
 ]
 

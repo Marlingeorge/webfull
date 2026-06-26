@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Form, Request, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
+import json
 from . import services, schemas
 from .database import get_db
 from .config import UPLOAD_DIR
@@ -46,7 +47,7 @@ def create_person_endpoint(
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="assign_number already exists")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database error")
 
-@router.get("/persons")
+@router.get("/persons", response_model=List[schemas.PersonOut])
 def list_persons_endpoint(active: Optional[bool] = None, db: Session = Depends(get_db)):
     # allow public listing of persons; optionally filter by active status
     return services.list_persons(db, active=active)
@@ -160,7 +161,7 @@ def delete_person(person_id: int, db: Session = Depends(get_db)):
     return {"ok": True}
 
 
-@router.get("/presences")
+@router.get("/presences", response_model=List[schemas.PresenceOut])
 def list_presences(db: Session = Depends(get_db)):
     return services.list_presences(db)
 
@@ -168,13 +169,37 @@ def list_presences(db: Session = Depends(get_db)):
 @router.get("/distributions")
 def list_distributions(db: Session = Depends(get_db)):
     d = services.list_distributions(db, limit=10)
-    return d
+    result = []
+    for dist in d:
+        assignments = {}
+        try:
+            assignments = json.loads(dist.assignments) if dist.assignments else {}
+        except Exception:
+            assignments = {}
+        result.append({
+            "id": dist.id,
+            "date": dist.date,
+            "assignments": assignments,
+        })
+    return result
 
 
 @router.get("/histories")
 def list_histories(db: Session = Depends(get_db)):
     h = services.list_histories(db, limit=2)
-    return h
+    result = []
+    for dist in h:
+        assignments = {}
+        try:
+            assignments = json.loads(dist.assignments) if dist.assignments else {}
+        except Exception:
+            assignments = {}
+        result.append({
+            "id": dist.id,
+            "date": dist.date,
+            "assignments": assignments,
+        })
+    return result
 
 
 

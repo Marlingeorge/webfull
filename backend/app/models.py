@@ -13,7 +13,7 @@ class Person(Base):
     last_task = Column(String(50), nullable=True)
     last_task_date = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
-    active = Column("is_active", Boolean, nullable=False, default=True)
+    active = Column('active', Boolean, nullable=False, default=True)
 
     presences = relationship("Presence", back_populates="person")
 

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from datetime import datetime
 
 class PersonCreate(BaseModel):
@@ -37,7 +37,20 @@ class PresenceUpdate(BaseModel):
 class DistributionOut(BaseModel):
     id: int
     date: datetime
-    assignments: str
+    assignments: Dict[str, Any]
+
+    class Config:
+        orm_mode = True
+
+class PresenceOut(BaseModel):
+    id: int
+    person_id: int
+    date: datetime
+    present: bool
+
+    class Config:
+        orm_mode = True
+
 
 class AdminLogin(BaseModel):
     username: str
