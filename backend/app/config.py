@@ -8,7 +8,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 DATABASE_URL = getenv("DATABASE_URL")
-if not DATABASE_URL:
+if DATABASE_URL:
+    DATABASE_URL = DATABASE_URL.strip()
+    if DATABASE_URL.startswith("mysql://"):
+        DATABASE_URL = DATABASE_URL.replace("mysql://", "mysql+pymysql://", 1)
+else:
     db_host = getenv("DB_HOST", "localhost")
     db_port = getenv("DB_PORT", "3306")
     db_user = getenv("DB_USER", "root")

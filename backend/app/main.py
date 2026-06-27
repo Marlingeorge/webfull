@@ -1,16 +1,21 @@
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-from sqlalchemy import inspect, text
-from .database import engine, Base
-from . import routes
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from .services import generate_distribution, get_admin_by_username, create_admin
-from .database import SessionLocal
-from .config import UPLOAD_DIR, ALLOWED_ORIGINS
-from pathlib import Path
+import logging
 import os
+from pathlib import Path
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+from sqlalchemy import inspect, text
+
+from .config import ALLOWED_ORIGINS, UPLOAD_DIR
+from .database import Base, SessionLocal, engine
+from . import routes
+from .services import create_admin, generate_distribution, get_admin_by_username
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+logger = logging.getLogger(__name__)
+
 
 app = FastAPI(title="Distribution des Tâches du Dortoir")
 
@@ -63,6 +68,13 @@ async def startup_event():
     # on startup if the configured DB (e.g. MySQL) is unreachable.
     try:
         if engine is not None:
+            logger.info(
+                "Starting database initialization: host=%s port=%s database=%s driver=%s",
+                engine.url.host or "localhost",
+                engine.url.port or 0,
+                engine.url.database or "",
+                engine.url.drivername,
+            )
             Base.metadata.create_all(bind=engine)
 
             inspector = inspect(engine)
@@ -82,8 +94,10 @@ async def startup_event():
                 with engine.connect() as conn:
                     conn.execute(text("UPDATE persons SET active = 1 WHERE active IS NULL"))
                     conn.commit()
+        else:
+            logger.warning("No database engine available at startup. Verify DATABASE_URL is configured.")
     except Exception as e:
-        print("Warning: database initialization skipped due to error:", e)
+        logger.warning("Database initialization skipped due to error: %s", e)
 
     # ensure uploads folder
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -137,6 +151,21 @@ def health():
     except Exception as e:
         status["db"] = f"error: {e}"
     return status
+
+
+@app.get("/db-config")
+def db_config():
+    """Return database connection info without exposing a password."""
+    if engine is None:
+        raise HTTPException(status_code=503, detail="Database engine unavailable")
+
+    url = engine.url
+    return {
+        "host": url.host,
+        "port": url.port,
+        "database": url.database,
+        "driver": url.drivername,
+    }
 
 
 # SPA catch-all: return index.html for non-API, non-static paths to support client-side routing
