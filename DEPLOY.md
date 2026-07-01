@@ -38,3 +38,20 @@ curl -i http://localhost:8000/health
 - Dans les `Build Commands`, exécutez `make build` pour construire frontend et copier les fichiers avant de lancer le serveur.
 - Définissez `DATABASE_URL`, `ALLOWED_ORIGINS` (ou laissez `*`), et optionnellement `FRONTEND_DIST_PATH` si vous placez le build ailleurs.
 
+## Déploiement Docker / Railway
+
+Ce projet fournit également un `Dockerfile`, un `.dockerignore`, un `Procfile` et un `railway.json` pour simplifier le déploiement.
+
+### Docker
+
+```bash
+docker build -t webfull .
+docker run -p 8000:8000 --env-file .env webfull
+```
+
+### Railway
+
+- Configurez les variables Railway : `DATABASE_URL`, `JWT_SECRET`, `ALLOWED_ORIGINS`.
+- Si vous utilisez Railway CLI, exécutez `railway up` depuis la racine du dépôt.
+- La configuration `railway.json` utilise le `Dockerfile` pour construire le projet.
+

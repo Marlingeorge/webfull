@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node
+node_modules/
+web/frontend/node_modules/
+
+# Build artifacts
+backend/frontend/dist/
+dist/
+build/
+
+# Git
+.git
+
+# Env files
+.env
+
+# Logs
+*.log
+pytest_output.txt
+
+# OS files
+.DS_Store
+Thumbs.db

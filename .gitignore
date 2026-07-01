@@ -25,3 +25,9 @@ build/
 *.mov
 .venv/
 node_modules/
+
+# Local database
+test.db
+
+# Frontend build artifacts
+backend/frontend/dist/

@@ -6,6 +6,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.routing import Match
 from sqlalchemy import inspect, text
 
 from .config import ALLOWED_ORIGINS, UPLOAD_DIR
@@ -30,6 +31,9 @@ app.add_middleware(
 # expose uploads
 app.mount("/uploads", StaticFiles(directory=str(UPLOAD_DIR)), name="uploads")
 
+# Include API routes before mounting the frontend so `/api/*` is handled by FastAPI
+app.include_router(routes.router, prefix="/api")
+
 # --- Static SPA serving -------------------------------------------------
 # Detect possible frontend build folders, prefer an explicit env var.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -51,9 +55,6 @@ for p in POSSIBLE_DIRS:
         break
 
 if FRONTEND_DIR:
-    # Mount the built frontend at root. API routes (prefix /api) are included before,
-    # so they take precedence. `html=True` helps serve index.html for directories.
-    app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")
     INDEX_FILE = FRONTEND_DIR / "index.html"
 else:
     INDEX_FILE = None
@@ -63,41 +64,19 @@ else:
 
 @app.on_event("startup")
 async def startup_event():
-    # create DB tables and ensure schema matches local models
-    # Surround DB initialization with try/except so the app doesn't crash
-    # on startup if the configured DB (e.g. MySQL) is unreachable.
     try:
         if engine is not None:
             logger.info(
-                "Starting database initialization: host=%s port=%s database=%s driver=%s",
+                "Database connection available: host=%s port=%s database=%s driver=%s",
                 engine.url.host or "localhost",
                 engine.url.port or 0,
                 engine.url.database or "",
                 engine.url.drivername,
             )
-            Base.metadata.create_all(bind=engine)
-
-            inspector = inspect(engine)
-            if inspector.has_table("persons"):
-                columns = [col["name"] for col in inspector.get_columns("persons")]
-                with engine.connect() as conn:
-                    if "last_task" not in columns:
-                        conn.execute(text("ALTER TABLE persons ADD COLUMN last_task VARCHAR(50) NULL"))
-                    if "last_task_date" not in columns:
-                        conn.execute(text("ALTER TABLE persons ADD COLUMN last_task_date DATETIME NULL"))
-                    if "active" not in columns:
-                        conn.execute(text("ALTER TABLE persons ADD COLUMN active TINYINT(1) NOT NULL DEFAULT 1"))
-                    if "faculty_name" not in columns:
-                        conn.execute(text("ALTER TABLE persons ADD COLUMN faculty_name VARCHAR(200) NOT NULL DEFAULT ''"))
-                    conn.commit()
-
-                with engine.connect() as conn:
-                    conn.execute(text("UPDATE persons SET active = 1 WHERE active IS NULL"))
-                    conn.commit()
         else:
             logger.warning("No database engine available at startup. Verify DATABASE_URL is configured.")
     except Exception as e:
-        logger.warning("Database initialization skipped due to error: %s", e)
+        logger.warning("Database connectivity check failed: %s", e)
 
     # ensure uploads folder
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -128,9 +107,6 @@ async def startup_event():
     # schedule daily at 04:00
     scheduler.add_job(job_func, "cron", hour=4, minute=0)
     scheduler.start()
-
-
-app.include_router(routes.router, prefix="/api")
 
 @app.get("/")
 def home():

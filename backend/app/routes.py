@@ -3,6 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing import Optional, List
 import json
+from .auth import create_token, verify_password, get_current_admin
 from . import services, schemas
 from .database import get_db
 from .config import UPLOAD_DIR
@@ -47,6 +48,14 @@ def create_person_endpoint(
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="assign_number already exists")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database error")
 
+@router.post("/auth/login")
+def login_admin(credentials: schemas.AdminLogin, db: Session = Depends(get_db)):
+    admin = services.get_admin_by_username(db, credentials.username)
+    if not admin or not verify_password(credentials.password, admin.password_hash):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    access_token = create_token({"sub": admin.username, "role": "admin"})
+    return {"access_token": access_token, "token_type": "bearer"}
+
 @router.get("/persons", response_model=List[schemas.PersonOut])
 def list_persons_endpoint(active: Optional[bool] = None, db: Session = Depends(get_db)):
     # allow public listing of persons; optionally filter by active status
@@ -54,18 +63,18 @@ def list_persons_endpoint(active: Optional[bool] = None, db: Session = Depends(g
 
 
 @router.delete("/persons")
-def delete_all_persons(db: Session = Depends(get_db)):
+def delete_all_persons(db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
     services.delete_all_persons(db)
     return {"ok": True}
 
 
 @router.post("/presences")
-def set_presence_endpoint(pres: schemas.PresenceUpdate, db: Session = Depends(get_db)):
+def set_presence_endpoint(pres: schemas.PresenceUpdate, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
     return services.set_presence(db, pres.person_id, pres.present)
 
 
 @router.post("/generate")
-def generate_endpoint(db: Session = Depends(get_db)):
+def generate_endpoint(db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
     dist = services.generate_distribution(db)
     if not dist:
         raise HTTPException(status_code=400, detail="No active persons or invalid distribution day")
@@ -76,7 +85,7 @@ def generate_endpoint(db: Session = Depends(get_db)):
 
 
 @router.get("/generate-test")
-def generate_test_endpoint(n: int = 4):
+def generate_test_endpoint(n: int = 4, current_admin: dict = Depends(get_current_admin)):
     """Return a preview distribution for `n` people without saving to DB."""
     return services.preview_distribution(n)
 
@@ -90,7 +99,7 @@ def get_person(person_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/persons/{person_id}")
-async def update_person(person_id: int, request: Request, db: Session = Depends(get_db)):
+async def update_person(person_id: int, request: Request, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
     data = {}
     photo_path = None
     content_type = request.headers.get("content-type", "")
@@ -154,7 +163,7 @@ async def update_person(person_id: int, request: Request, db: Session = Depends(
 
 
 @router.delete("/persons/{person_id}")
-def delete_person(person_id: int, db: Session = Depends(get_db)):
+def delete_person(person_id: int, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
     ok = services.delete_person(db, person_id)
     if not ok:
         raise HTTPException(status_code=404, detail="Not found")
@@ -162,7 +171,7 @@ def delete_person(person_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/presences", response_model=List[schemas.PresenceOut])
-def list_presences(db: Session = Depends(get_db)):
+def list_presences(db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
     return services.list_presences(db)
 
 
@@ -185,7 +194,7 @@ def list_distributions(db: Session = Depends(get_db)):
 
 
 @router.get("/histories")
-def list_histories(db: Session = Depends(get_db)):
+def list_histories(db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
     h = services.list_histories(db, limit=2)
     result = []
     for dist in h:

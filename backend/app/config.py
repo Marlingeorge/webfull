@@ -23,12 +23,24 @@ else:
     )
 
 JWT_SECRET = getenv("JWT_SECRET") or getenv("SECRET_KEY")
+if not JWT_SECRET:
+    raise RuntimeError("JWT_SECRET environment variable must be set")
 JWT_ALGORITHM = "HS256"
 
-ALLOWED_ORIGINS = [
-    origin.strip()
-    for origin in getenv("ALLOWED_ORIGINS", "*").split(",")
-    if origin.strip()
+DEFAULT_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:8000",
 ]
+
+origins_value = getenv("ALLOWED_ORIGINS")
+if origins_value:
+    ALLOWED_ORIGINS = [
+        origin.strip()
+        for origin in origins_value.split(",")
+        if origin.strip()
+    ]
+else:
+    ALLOWED_ORIGINS = DEFAULT_ALLOWED_ORIGINS
 
 UPLOAD_DIR = BASE_DIR / "uploads"

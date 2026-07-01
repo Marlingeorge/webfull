@@ -66,6 +66,28 @@ Le frontend sera accessible sur `http://localhost:5173`.
 - Le backend utilise par défaut la base MySQL `dormitory`; modifiez `backend/app/config.py` si nécessaire.
 - Une distribution automatique est prévue chaque jour à 04:00 via APScheduler.
 
+## Déploiement Docker / Railway
+
+Le projet inclut désormais les fichiers suivants pour faciliter le déploiement :
+- `Dockerfile`
+- `.dockerignore`
+- `Procfile`
+- `railway.json`
+- `.env.example`
+
+### Avec Docker
+
+```bash
+docker build -t webfull .
+docker run -p 8000:8000 --env-file .env webfull
+```
+
+### Avec Railway
+
+1. Copiez `.env.example` en `.env` ou configurez les variables Railway.
+2. Définissez au minimum `DATABASE_URL`, `JWT_SECRET`, `ALLOWED_ORIGINS`.
+3. Utilisez la commande `railway up` ou déployez via l’interface Railway.
+
 ## Tests backend
 
 ```powershell

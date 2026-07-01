@@ -35,7 +35,7 @@ try:
         engine = create_engine(
             engine_url,
             pool_pre_ping=True,
-            pool_recycle=1800,
+            pool_recycle=3600,
             future=True,
             connect_args=connect_args,
         )

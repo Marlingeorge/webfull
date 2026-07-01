@@ -18,8 +18,7 @@ class PersonOut(BaseModel):
     created_at: datetime
     active: bool
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
 
 class PersonUpdate(BaseModel):
     full_name: Optional[str] = None
@@ -27,8 +26,7 @@ class PersonUpdate(BaseModel):
     faculty_name: Optional[str] = None
     active: Optional[bool] = None
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 class PresenceUpdate(BaseModel):
     person_id: int
@@ -39,8 +37,7 @@ class DistributionOut(BaseModel):
     date: datetime
     assignments: Dict[str, Any]
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
 
 class PresenceOut(BaseModel):
     id: int
@@ -48,8 +45,7 @@ class PresenceOut(BaseModel):
     date: datetime
     present: bool
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
 
 
 class AdminLogin(BaseModel):
